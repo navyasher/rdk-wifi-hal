@@ -10592,6 +10592,7 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
                 wifi_hal_stats_error_print("%s:%d: [SCAN] memory allocation error!\n", __func__, __LINE__);
                 return NL_SKIP;
             }
+
             if (hash_map_put(interface->scan_info_map, strdup(key), scan_info)) {
                 pthread_mutex_unlock(&interface->scan_info_mutex);
                 free(scan_info);
@@ -10607,14 +10608,10 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
 
     // - add AP info into AP map under AP mutex
     pthread_mutex_lock(&interface->scan_info_ap_mutex);
-        if (hash_map_put(interface->scan_info_ap_map[0], strdup(key), scan_info_ap)) {
-        pthread_mutex_unlock(&interface->scan_info_ap_mutex);
-        free(scan_info_ap);
-        return NL_SKIP;
-    }
-        if (hash_map_put(interface->scan_info_ap_map[0], strdup(key), scan_info_ap)) {
+    if (hash_map_put(interface->scan_info_ap_map[0], strdup(key), scan_info_ap)) {
         pthread_mutex_unlock(&interface->scan_info_ap_mutex);
         wifi_hal_stats_error_print("%s:%d: map adding error!\n", __func__, __LINE__);
+        free(scan_info_ap);
         return NL_SKIP;
     }
     pthread_mutex_unlock(&interface->scan_info_ap_mutex);
