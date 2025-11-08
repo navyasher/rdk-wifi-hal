@@ -3657,7 +3657,6 @@ int create_ecomode_interfaces(void)
           radio->index =  l_radio_interface_map[radioIndex].phy_index;
           radio->rdk_radio_index = l_radio_interface_map[radioIndex].radio_index;
           radio->capab.index = radio->index;
-          // CID 336324: Calling risky function
           snprintf(radio->name, sizeof(radio->name), "%s", l_radio_interface_map[radioIndex].radio_name);
           g_wifi_hal.num_radios++;
           radio->capab.maxNumberVAPs = 0;
@@ -3683,7 +3682,6 @@ int create_ecomode_interfaces(void)
               memset(interface, 0, sizeof(wifi_interface_info_t));
               interface->phy_index = radio->index;
               interface->index = interface_index_map[vapIndex].index;
-              // CID 336324: Calling risky function
               snprintf(interface->name, sizeof(interface->name), "%s", interface_index_map[vapIndex].interface_name);
               if (set_interface_properties(interface->phy_index , interface) != 0) {
                   wifi_hal_info_print("%s:%d: Could not map interface name to index:%d\n", __func__, __LINE__, interface->phy_index);
