@@ -7517,6 +7517,7 @@ int nl80211_update_wiphy(wifi_radio_info_t *radio)
 
     nla_put_u32(msg, NL80211_ATTR_IFINDEX, interface->index);
     if (nl80211_fill_chandef(msg, radio, interface) == -1) {
+        nlmsg_free(msg); //CID 337171
         return -1;
     }
 
@@ -7567,6 +7568,7 @@ int nl80211_update_wiphy(wifi_radio_info_t *radio)
 
            nla_put_u32(msg, NL80211_ATTR_IFINDEX, interface->index);
            if (nl80211_fill_chandef(msg, radio, interface) == -1) {
+                nlmsg_free(msg); //CID 337171
                 return -1;
             }
 
