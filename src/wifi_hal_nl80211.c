@@ -14060,13 +14060,17 @@ int nl80211_set_acl(wifi_interface_info_t *interface)
             policy = NL80211_ACL_POLICY_DENY_UNLESS_LISTED;
         }
 
-
-        nla_put_u32(msg, NL80211_ATTR_ACL_POLICY, policy);
+        if (nla_put_u32(msg, NL80211_ATTR_ACL_POLICY, policy)) {
+            wifi_hal_dbg_print("nl80211: Failed to set ACL policy\n");
+            nlmsg_free(msg); //CID 335462
+            return -ENOMEM;
+        }
 
         acl = nla_nest_start(msg, NL80211_ATTR_MAC_ADDRS);
 
         if (acl == NULL) {
             wifi_hal_dbg_print("nl80211: Failed to to add ACL list to msg\n");
+            nlmsg_free(msg); //CID 335462
             return -ENOMEM;
         }
 
@@ -14075,6 +14079,8 @@ int nl80211_set_acl(wifi_interface_info_t *interface)
             while (acl_map != NULL) {
                 if (nla_put(msg, i, ETH_ALEN, acl_map->mac_addr)) {
                     wifi_hal_dbg_print("nl80211: Failed to add MAC to ACL list\n");
+                    nla_nest_cancel(msg, acl);
+                    nlmsg_free(msg); //CID 335462
                     return -ENOMEM;
                 }
                 acl_map = hash_map_get_next(interface->acl_map, acl_map);
@@ -14084,6 +14090,8 @@ int nl80211_set_acl(wifi_interface_info_t *interface)
         if (i == 0) {
             if (nla_put(msg, i, ETH_ALEN, null_mac)) {
                 wifi_hal_dbg_print("nl80211: Failed to add MAC to ACL list\n");
+                nla_nest_cancel(msg, acl);
+                nlmsg_free(msg); //CID 335462
                 return -ENOMEM;
             }
         }
@@ -14093,8 +14101,11 @@ int nl80211_set_acl(wifi_interface_info_t *interface)
             vap->u.bss_info.mac_filter_mode == wifi_mac_filter_mode_black_list ? "Blacklist" : "Whitelist");
 
     } else {
-        nla_put_u32(msg, NL80211_ATTR_ACL_POLICY, NL80211_ACL_POLICY_ACCEPT_UNLESS_LISTED);
-        nla_put_u32(msg, NL80211_ATTR_MAC_ADDRS, 0);
+        if (nla_put_u32(msg, NL80211_ATTR_ACL_POLICY, NL80211_ACL_POLICY_ACCEPT_UNLESS_LISTED) ||
+            nla_put_u32(msg, NL80211_ATTR_MAC_ADDRS, 0)) {
+            nlmsg_free(msg); //CID 335462
+            return -ENOMEM;
+        }
         wifi_hal_dbg_print("%s:%d: Disable ACL\n", __func__, __LINE__);
     }
 
