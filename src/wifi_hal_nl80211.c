@@ -9218,9 +9218,13 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     wifi_hal_dbg_print("%s:%d:bssid:%s frequency:%d ssid:%s\n", __func__, __LINE__,
             to_mac_str(backhaul->bssid, bssid_str), backhaul->freq, backhaul->ssid);
 
-    nla_put(msg, NL80211_ATTR_SSID, strlen(backhaul->ssid), backhaul->ssid);
-    nla_put(msg, NL80211_ATTR_MAC, sizeof(backhaul->bssid), backhaul->bssid);
-    nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, backhaul->freq);
+    if (nla_put(msg, NL80211_ATTR_SSID, strlen(backhaul->ssid), backhaul->ssid) ||
+        nla_put(msg, NL80211_ATTR_MAC, sizeof(backhaul->bssid), backhaul->bssid) ||
+        nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, backhaul->freq)) {
+        wifi_hal_error_print("%s:%d: Failed to set connection parameters\n", __func__, __LINE__);
+        nlmsg_free(msg); //CID 277357
+        return -1;
+    }
 
     pos = rsn_ie;
 
@@ -9239,6 +9243,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
 
             if (key_mgmt == -1) {
                 wifi_hal_error_print("Unsupported AKM suite: 0x%x\n", data.key_mgmt);
+                nlmsg_free(msg); //CID 280318
                 return -1;
             }
 
@@ -9304,6 +9309,7 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
     if (security->mode != wifi_security_mode_none) {
         if ((ret = wpa_write_rsn_ie(&wpa_conf, pos, rsn_ie + sizeof(rsn_ie) - pos, NULL)) < 0) {
             wifi_hal_error_print("%s:%d Failed to build RSN %d\r\n", __func__, __LINE__, ret);
+            nlmsg_free(msg); //CID 280318
             return ret;
         }
         else {
@@ -9316,27 +9322,46 @@ int nl80211_connect_sta(wifi_interface_info_t *interface)
                 pos += interface->u.sta.wpa_sm->assoc_rsnxe_len;
             }
 #endif
-            nla_put(msg, NL80211_ATTR_IE, pos - rsn_ie, rsn_ie);
+            if (nla_put(msg, NL80211_ATTR_IE, pos - rsn_ie, rsn_ie)) {
+                nlmsg_free(msg);
+                return -1;
+            }
         }
 
         if (security->mode == wifi_security_mode_wpa2_enterprise || security->mode == wifi_security_mode_wpa2_personal)
             ver |= NL80211_WPA_VERSION_2;
         else
             ver |= NL80211_WPA_VERSION_1;
-        nla_put_u32(msg, NL80211_ATTR_WPA_VERSIONS, ver);
+        if (nla_put_u32(msg, NL80211_ATTR_WPA_VERSIONS, ver) ||
+            nla_put_u32(msg, NL80211_ATTR_CIPHER_SUITES_PAIRWISE, RSN_CIPHER_SUITE_CCMP) ||
+            nla_put_u32(msg, NL80211_ATTR_CIPHER_SUITE_GROUP, RSN_CIPHER_SUITE_CCMP)) {
+            nlmsg_free(msg);
+            return -1;
+        }
 
-        nla_put_u32(msg, NL80211_ATTR_CIPHER_SUITES_PAIRWISE, RSN_CIPHER_SUITE_CCMP);
-        nla_put_u32(msg, NL80211_ATTR_CIPHER_SUITE_GROUP, RSN_CIPHER_SUITE_CCMP);
+        if (security->mode == wifi_security_mode_wpa2_enterprise) {
+            if (nla_put_u32(msg, NL80211_ATTR_AKM_SUITES, RSN_AUTH_KEY_MGMT_UNSPEC_802_1X)) {
+                wifi_hal_error_print("%s:%d: Failed to set AKM suite\n", __func__, __LINE__);
+                nlmsg_free(msg);
+                return -1;
+            }
+        } else if (security->mode == wifi_security_mode_wpa2_personal) {
+            if (nla_put_u32(msg, NL80211_ATTR_AKM_SUITES, RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X)) {
+                nlmsg_free(msg);
+                return -1;
+            }
+        }
 
-        if (security->mode == wifi_security_mode_wpa2_enterprise)
-            nla_put_u32(msg, NL80211_ATTR_AKM_SUITES, RSN_AUTH_KEY_MGMT_UNSPEC_802_1X);
-        else if (security->mode == wifi_security_mode_wpa2_personal)
-            nla_put_u32(msg, NL80211_ATTR_AKM_SUITES, RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X);
-
-        nla_put_u32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM);
-        nla_put_flag(msg, NL80211_ATTR_PRIVACY);
+        if (nla_put_u32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM) ||
+            nla_put_flag(msg, NL80211_ATTR_PRIVACY)) {
+            nlmsg_free(msg);
+            return -1;
+        }
     } else {
-        nla_put_u32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM);
+        if (nla_put_u32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM)) {
+            nlmsg_free(msg);
+            return -1;
+        }
         wifi_hal_dbg_print("security mode open:%d encr:%d\n", security->mode, security->encr);
     }
 #ifdef EAPOL_OVER_NL
