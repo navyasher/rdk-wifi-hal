@@ -7515,7 +7515,11 @@ int nl80211_update_wiphy(wifi_radio_info_t *radio)
         return -1;
     }
 
-    nla_put_u32(msg, NL80211_ATTR_IFINDEX, interface->index);
+    if (nla_put_u32(msg, NL80211_ATTR_IFINDEX, interface->index) < 0) {
+        wifi_hal_error_print("%s:%d: Failed to add interface index\n", __func__, __LINE__);
+        nlmsg_free(msg);
+        return -1;
+    }
     if (nl80211_fill_chandef(msg, radio, interface) == -1) {
         nlmsg_free(msg); //CID 337171
         return -1;
@@ -7524,6 +7528,8 @@ int nl80211_update_wiphy(wifi_radio_info_t *radio)
 #if HOSTAPD_VERSION >= 211 && defined(CONFIG_GENERIC_MLO)
     if (link_id != NL80211_DRV_LINK_ID_NA &&
         nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, link_id) < 0) {
+        wifi_hal_error_print("%s:%d: Failed to add MLO link ID\n", __func__, __LINE__);
+        nlmsg_free(msg);
         return -1;
     }
 #endif // HOSTAPD_VERSION >= 211 && CONFIG_GENERIC_MLO
@@ -7566,7 +7572,11 @@ int nl80211_update_wiphy(wifi_radio_info_t *radio)
                return -1;
            }
 
-           nla_put_u32(msg, NL80211_ATTR_IFINDEX, interface->index);
+           if (nla_put_u32(msg, NL80211_ATTR_IFINDEX, interface->index) < 0) {
+               wifi_hal_error_print("%s:%d: Failed to add interface index\n", __func__, __LINE__);
+               nlmsg_free(msg);
+               return -1;
+           }
            if (nl80211_fill_chandef(msg, radio, interface) == -1) {
                 nlmsg_free(msg); //CID 337171
                 return -1;
