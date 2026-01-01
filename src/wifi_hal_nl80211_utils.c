@@ -2842,6 +2842,28 @@ int get_wifi_op_class_info(wifi_countrycode_type_t country_code, wifi_country_ra
     return RETURN_OK;
 }
 
+int convert_enum_beaconrate_to_int(wifi_bitrate_t rates)
+{
+    switch (rates) {
+        case WIFI_BITRATE_1MBPS: return 1;
+        case WIFI_BITRATE_2MBPS: return 2;
+        case WIFI_BITRATE_5_5MBPS: return 5.5;
+        case WIFI_BITRATE_11MBPS: return 11;
+        case WIFI_BITRATE_6MBPS: return 6;
+        case WIFI_BITRATE_9MBPS: return 9;
+        case WIFI_BITRATE_12MBPS: return 12;
+        case WIFI_BITRATE_18MBPS: return 18;
+        case WIFI_BITRATE_24MBPS: return 24;
+        case WIFI_BITRATE_36MBPS: return 36;
+        case WIFI_BITRATE_48MBPS: return 48;
+        case WIFI_BITRATE_54MBPS: return 54;
+        default:
+            wifi_hal_error_print("%s:%d: failed to convert beacon rate %d to nl80211 rate\n",
+                __func__, __LINE__, rates);
+            return RETURN_ERR;
+    }
+}
+
 int get_op_class_from_radio_params(wifi_radio_operationParam_t *param)
 {
     unsigned int i, j;
@@ -5180,6 +5202,37 @@ int wifi_hal_set_mld_link_id(wifi_interface_info_t *interface, int link_id)
     return -1;
 }
 
+wifi_interface_info_t *wifi_hal_get_first_mld_interface(wifi_interface_info_t *interface)
+{
+    wifi_radio_info_t *radio;
+    wifi_interface_info_t *interface_iter;
+
+    if (!wifi_hal_is_mld_enabled(interface)) {
+        return interface;
+    }
+
+    for (unsigned int i = 0; i < g_wifi_hal.num_radios; i++) {
+        radio = get_radio_by_rdk_index(i);
+        if (radio == NULL) {
+            wifi_hal_error_print("%s:%d: Failed to get radio for index: %d\n", __func__, __LINE__,
+                i);
+            return NULL;
+        }
+
+        hash_map_foreach(radio->interface_map, interface_iter) {
+            if (!wifi_hal_is_mld_enabled(interface_iter)) {
+                continue;
+            }
+
+            if (interface_iter->index == interface->index) {
+                return interface_iter;
+            }
+        }
+    }
+
+    return interface;
+}
+
 uint8_t *wifi_hal_get_mld_mac_address(wifi_interface_info_t *interface)
 {
     if (interface == NULL) {
@@ -5350,4 +5403,51 @@ int wifi_hal_get_mac_address(const char *ifname, mac_address_t mac)
     memcpy(mac, ifr.ifr_hwaddr.sa_data, sizeof(mac_address_t));
 
     return 0;
+}
+
+int bw_enum_to_mhz(wifi_channelBandwidth_t chwid)
+{
+    switch (chwid) {
+    case WIFI_CHANNELBANDWIDTH_20MHZ:
+        return 20;
+    case WIFI_CHANNELBANDWIDTH_40MHZ:
+        return 40;
+    case WIFI_CHANNELBANDWIDTH_80MHZ:
+        return 80;
+    case WIFI_CHANNELBANDWIDTH_160MHZ:
+        return 160;
+    case WIFI_CHANNELBANDWIDTH_320MHZ:
+        return 320;
+    case WIFI_CHANNELBANDWIDTH_80_80MHZ:
+    default:
+        return -1;
+    }
+}
+
+uint16_t freq_to_primary(uint16_t freq, wifi_channelBandwidth_t chwid)
+{
+    bool is_primary_freq = false;
+    bool is_centre_freq = false;
+    int bw = 0;
+
+    if (freq == 0) {
+        return 0;
+    }
+    bw = bw_enum_to_mhz(chwid);
+
+    if (bw <= 20) {
+        return freq;
+    }
+    is_primary_freq = (freq % 20 == 0);
+
+    is_centre_freq = ((freq - 10) % 20 == 0);
+
+    if (is_primary_freq && !is_centre_freq) {
+        return freq;
+    }
+    if (!is_primary_freq && is_centre_freq && bw > 20) {
+        return (freq - (bw / 2 - 10));
+    }
+
+    return freq;
 }
