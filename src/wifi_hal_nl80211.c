@@ -3503,13 +3503,13 @@ static int execute_send_and_recv(struct nl_cb *cb_ctx,
 
     /* try to set NETLINK_EXT_ACK to 1, ignoring errors */
     opt = 1;
-    setsockopt(nl_socket_get_fd((const struct nl_sock *)nl_handle), SOL_NETLINK,
-           NETLINK_EXT_ACK, &opt, sizeof(opt));
+    (void)setsockopt(nl_socket_get_fd((const struct nl_sock *)nl_handle), SOL_NETLINK,
+           NETLINK_EXT_ACK, &opt, sizeof(opt)); //CID 1
 
     /* try to set NETLINK_CAP_ACK to 1, ignoring errors */
     opt = 1;
-    setsockopt(nl_socket_get_fd((const struct nl_sock *)nl_handle), SOL_NETLINK,
-           NETLINK_CAP_ACK, &opt, sizeof(opt));
+    (void)setsockopt(nl_socket_get_fd((const struct nl_sock *)nl_handle), SOL_NETLINK,
+           NETLINK_CAP_ACK, &opt, sizeof(opt)); //CID 2
 
     err = nl_send_auto_complete((struct nl_sock *)nl_handle, msg);
     if (err < 0) {
@@ -5642,7 +5642,7 @@ static int wiphy_dump_handler(struct nl_msg *msg, void *arg)
     }
 
     if (tb[NL80211_ATTR_WIPHY_NAME]) {
-        strcpy(radio->name, nla_get_string(tb[NL80211_ATTR_WIPHY_NAME]));
+        snprintf(radio->name, sizeof(radio->name), "%s", nla_get_string(tb[NL80211_ATTR_WIPHY_NAME])); //CID: 106
     }
 
 #if defined(CONFIG_HW_CAPABILITIES) || defined(VNTXER5_PORT) || defined(TARGET_GEMINI7_2)
@@ -14700,7 +14700,7 @@ int set_bss_param(void *priv, struct wpa_driver_ap_params *params)
         wifi_hal_error_print("%s:%d: Failed to create message\n", __func__, __LINE__);
         return -1;
     }
-    nla_put_u8(msg, NL80211_ATTR_AP_ISOLATE, params->isolate);
+    (void)nla_put_u8(msg, NL80211_ATTR_AP_ISOLATE, params->isolate); //CID 5
     wifi_hal_info_print("Set AP isolate:%d \r\n", params->isolate);
 
 #if HOSTAPD_VERSION >= 211 && defined(CONFIG_GENERIC_MLO)
@@ -16043,7 +16043,7 @@ int     wifi_drv_set_key(const char *ifname, void *priv, enum wpa_alg alg,
     if (params->addr && !is_broadcast_ether_addr(params->addr)) {
         nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, params->addr);
         if ((params->key_flag & KEY_FLAG_PAIRWISE_MASK) == KEY_FLAG_PAIRWISE_RX || (params->key_flag & KEY_FLAG_PAIRWISE_MASK) == KEY_FLAG_PAIRWISE_RX_TX_MODIFY) {
-          nla_put_u8(msg, NL80211_KEY_MODE, params->key_flag == KEY_FLAG_PAIRWISE_RX ? NL80211_KEY_NO_TX : NL80211_KEY_SET_TX);
+          (void)nla_put_u8(msg, NL80211_KEY_MODE, params->key_flag == KEY_FLAG_PAIRWISE_RX ? NL80211_KEY_NO_TX : NL80211_KEY_SET_TX); //CID 6
         }
         else if ((params->key_flag & KEY_FLAG_GROUP_MASK) == KEY_FLAG_GROUP_RX) {
           nla_put_u32(msg, NL80211_KEY_TYPE, NL80211_KEYTYPE_GROUP);
@@ -16069,7 +16069,8 @@ int     wifi_drv_set_key(const char *ifname, void *priv, enum wpa_alg alg,
       if (params->key_flag & KEY_FLAG_DEFAULT)
         skip_set_key = 0;
     }
-    nla_put_u8(msg, NL80211_ATTR_KEY_IDX, params->key_idx);
+    //CID 7
+    (void)nla_put_u8(msg, NL80211_ATTR_KEY_IDX, params->key_idx);
 
     if ((ret = nl80211_send_and_recv(msg, NULL, (void *)-1, NULL, NULL))) {
         wifi_hal_dbg_print("%s:%d: Failed new key: %d(%s)\n", __func__, __LINE__, ret, strerror(-ret));
@@ -16077,10 +16078,8 @@ int     wifi_drv_set_key(const char *ifname, void *priv, enum wpa_alg alg,
     }
 
     wifi_hal_dbg_print("%s:%d: new key success for ifname:%s vap_index:%d\n", __func__, __LINE__, interface->name, vap->vap_index);
-    if ((ret == -ENOENT || ret == -ENOLINK) && params->alg == WPA_ALG_NONE)
-      ret = 0;
-    if (ret || skip_set_key)
-      return ret;
+    if (skip_set_key) //CID 23
+      return 0;
 
     msg = nl80211_drv_cmd_msg(g_wifi_hal.nl80211_id, interface, 0, NL80211_CMD_SET_KEY);
 
@@ -16960,13 +16959,13 @@ int wifi_drv_set_acs_exclusion_list(unsigned int radioIndex, char* str)
     }
 }
 
-int wifi_drv_get_chspc_configs(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t chanlist, char* buff)
+int wifi_drv_get_chspc_configs(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t channels, char* buff)
 {
     wifi_hal_dbg_print("%s:%d Enter\n",__func__,__LINE__);
     platform_get_chanspec_list_t platform_get_chanspec_list_fn = get_platform_chanspec_list_fn();
     if(platform_get_chanspec_list_fn != NULL)
     {
-        return platform_get_chanspec_list_fn(radioIndex,bandwidth,chanlist,buff);
+        return platform_get_chanspec_list_fn(radioIndex,bandwidth,&channels,buff);
     } else {
         return 0;
     }

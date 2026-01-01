@@ -29,6 +29,7 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
 #include <linux/filter.h>
@@ -435,7 +436,7 @@ EC_POINT *dpp_build_point_from_connector_string(wifi_device_dpp_context_t *ctx, 
 	}
 
 	ptr++;
-	strcpy(connector_encoded, ptr);
+    snprintf(connector_encoded, sizeof(connector_encoded), "%s", ptr); //CID 96
 	if ((ptr = strchr(connector_encoded, '.')) == NULL) {
 		printf("%s:%d: Wrong connector format\n", __func__, __LINE__);
 		return NULL;	
@@ -559,7 +560,11 @@ int dpp_build_connector(wifi_device_dpp_context_t *dpp_ctx, char* connector, boo
         x = recfg->x;
         y = recfg->y;
     } else {
-        EC_POINT_get_affine_coordinates_GFp(instance->group, instance->responder_proto_pt, instance->x, instance->y, instance->bnctx);
+        //CID 4
+        if(!EC_POINT_get_affine_coordinates_GFp(instance->group, instance->responder_proto_pt, instance->x, instance->y, instance->bnctx)) {
+            printf("%s:%d Could not get affine coordinates\n", __func__, __LINE__);
+            return -1;
+        }
         x = instance->x;
         y = instance->y;
     }
@@ -695,7 +700,7 @@ void dpp_build_config(wifi_device_dpp_context_t *ctx, char* str)
 
 	/*discovery: ssid*/
 	cJSON_AddItemToObject(root, "discovery", discovery = cJSON_CreateObject());
-	if(obj->discovery)
+	if(obj->discovery[0] != '\0') //CID 59
 		cJSON_AddStringToObject(discovery, "ssid", obj->discovery);
 
 	/*cred*/
@@ -1207,7 +1212,11 @@ int compute_reconfig_encryption_key(wifi_dpp_instance_t *instance)
     unsigned int primelen, offset;
     unsigned char salt[SHA512_DIGEST_LENGTH];
 
-	EC_POINT_get_affine_coordinates_GFp(instance->group, instance->M, instance->m, instance->n, instance->bnctx);
+    //CID 3
+	if (!EC_POINT_get_affine_coordinates_GFp(instance->group, instance->M, instance->m, instance->n, instance->bnctx)) {
+		printf("%s:%d Could not get affine coordinates\n", __func__, __LINE__);
+        return -1;
+	}
     primelen = BN_num_bytes(instance->prime);
     
     memset(m, 0, primelen);
@@ -1304,7 +1313,7 @@ int create_auth_tags    (wifi_dpp_instance_t *instance, char *iPubKeyInfoB64, ch
     unsigned char keyasn1[1024];
     unsigned char tag[SHA512_DIGEST_LENGTH];
     const unsigned char *key;
-    unsigned int asn1len;
+    int asn1len; //CID 11,12,68
     EC_KEY *responder_boot_key, *initiator_boot_key;
 
     //I-auth’ = H(R-nonce | I-nonce | PR.x | PI.x | BR.x | [ BI.x | ] 1) 
@@ -1658,7 +1667,8 @@ int wifi_dppCreateReconfigContext(unsigned int ap_index, char *net_access_key, w
 {
 	wifi_dpp_reconfig_instance_t *instance;
     unsigned char keyasn1[1024];
-    unsigned int asn1len, pub_key_len;
+    unsigned int pub_key_len;
+    int asn1len; //CID 13, 60
     const unsigned char *key;
 	EC_GROUP *group;
 	unsigned char *pub_key;
@@ -1674,7 +1684,7 @@ int wifi_dppCreateReconfigContext(unsigned int ap_index, char *net_access_key, w
 
 	if (instance != NULL) {
 		delete_dpp_reconfig_context(ap_index, instance);
-		instance = NULL;
+        //CID 118
 	}
 
     printf("%s:%d Here\n", __func__, __LINE__);
@@ -1797,7 +1807,7 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
 	wifi_dpp_csign_instance_t *instance;
 	int bnlen, offset, b64len;
     unsigned char keyasn1[1024];
-    unsigned int asn1len;
+    int asn1len;  //CID 14, 61
     const unsigned char *key;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     EVP_MD_CTX  ctx;
@@ -1825,7 +1835,7 @@ int wifi_dppCreateCSignIntance(unsigned int ap_index, char *c_sign_key, wifi_dpp
 	
 	if (instance != NULL) {
 		delete_dpp_csign_instance(ap_index, instance);
-		instance = NULL;
+        //CID 117
 	}
 
 	instance = (wifi_dpp_csign_instance_t *)malloc(sizeof(wifi_dpp_csign_instance_t));
@@ -1946,7 +1956,7 @@ wifi_dpp_session_data_t *create_dpp_session_instance(wifi_device_dpp_context_t *
     unsigned char keyasn1[1024];
     const unsigned char *key;
     wifi_dpp_session_data_t    *data = NULL;
-    unsigned int asn1len;
+    int asn1len;
     EC_KEY *responder_key, *initiator_key;
     const EC_POINT *ipt, *rpt = NULL;
     const BIGNUM *proto_priv;
@@ -2511,7 +2521,8 @@ INT wifi_dppProcessAuthResponse(wifi_device_dpp_context_t *dpp_ctx)
     unsigned char keyasn1[1024];
     unsigned char keyhash[SHA512_DIGEST_LENGTH];
     unsigned char *key;
-    unsigned int asn1len, attrib_len, primelen;
+    int asn1len; //CID 22, 62
+    unsigned int attrib_len, primelen;
 	int decrypted_len;
     siv_ctx ctx;
     unsigned char   primary[512];
@@ -2957,7 +2968,8 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
     unsigned char keyhash[SHA512_DIGEST_LENGTH];
     const unsigned char *key;
     unsigned char buff[2048], dpp_status = WIFI_STATUS_OK;
-    unsigned int asn1len, tlv_len = 0, wrapped_len = 0;
+    unsigned int tlv_len = 0, wrapped_len = 0;
+    int asn1len; //CID 18,19, 65
     wifi_dppPublicActionFrame_t    *public_action_frame;
     wifi_dpp_session_data_t *data = NULL;
 	wifi_dpp_instance_t	*instance;
@@ -3035,6 +3047,11 @@ wifi_dppSendAuthCnf(wifi_device_dpp_context_t *ctx)
 
     printf("%s:%d: Setting wrapped data\n", __func__, __LINE__);
     wrapped_len = set_auth_frame_wrapped_data(&public_action_frame->public_action_body, tlv_len, instance, false);
+    if (wrapped_len == UINT_MAX) {
+        printf("%s:%d: Failed to set wrapped data\n", __func__, __LINE__);
+        ctx->activation_status = ActStatus_Failed;
+        return RETURN_ERR;
+    } //CID 49 50
     tlv_len += (wrapped_len + 4);
 
     printf("%s:%d: Sending frame\n", __func__, __LINE__);
@@ -3059,13 +3076,21 @@ wifi_dppCancel(wifi_device_dpp_context_t *ctx)
 wifi_dpp_session_data_t *create_dpp_reconfig_session_instance(wifi_device_dpp_context_t *ctx)
 {
         wifi_dpp_session_data_t    *data = NULL;
-	time_t t;
+	int fd;
 
 	data = &ctx->session_data;
 
-	srand((unsigned int) time(&t));
-
-	data->u.reconfig_data.tran_id[0] = rand();
+    //CID 9
+    fd = open("/dev/urandom", O_RDONLY);
+	if (fd != -1) {
+		size_t bytes_read = 0;
+		bytes_read = read(fd, &data->u.reconfig_data.tran_id[0], sizeof(data->u.reconfig_data.tran_id[0]));
+		if (!bytes_read) {
+			close(fd);
+			return NULL;
+		}
+		close(fd);
+	}
 
         return data;
 }
@@ -3114,7 +3139,17 @@ wifi_dppReconfigInitiate(wifi_device_dpp_context_t *ctx)
 
     tlv = (wifi_tlv_t *)public_action_frame->public_action_body.attrib;
 
-	data->u.reconfig_data.tran_id[retry_cnt] = rand();
+    //CID 10
+    int fd = open("/dev/urandom", O_RDONLY);
+	if (fd != -1) {
+		size_t bytes_read = 0;
+		bytes_read = read(fd, &data->u.reconfig_data.tran_id[retry_cnt], sizeof(data->u.reconfig_data.tran_id[retry_cnt]));
+		if (!bytes_read) {
+			close(fd);
+			return RETURN_ERR;
+		}
+		close(fd);
+	}
 	wifi_dpp_dbg_print("%s:%d Building TLV transaction id: %d \n", __func__, __LINE__,data->u.reconfig_data.tran_id[retry_cnt]);
     tlv = set_tlv((unsigned char *)tlv, wifi_dpp_attrib_id_transaction_id, sizeof(unsigned char), &data->u.reconfig_data.tran_id[retry_cnt]);
     tlv_len += (sizeof(unsigned char) + 4);
@@ -3156,7 +3191,7 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
 {
     unsigned char keyasn1[1024];
     const unsigned char *key;
-    unsigned int asn1len;
+    int asn1len; //CID 20,21,66
     EC_KEY *responder_boot_key, *initiator_boot_key;
     unsigned char buff[2048];
     unsigned int wrapped_len;
@@ -3260,6 +3295,10 @@ wifi_dppInitiate(wifi_device_dpp_context_t *ctx)
     tlv_len += 6;
     
     wrapped_len = set_auth_frame_wrapped_data(&public_action_frame->public_action_body, tlv_len, instance, true);
+    if (wrapped_len == UINT_MAX) {
+        printf("%s:%d: Failed to set wrapped data\n", __func__, __LINE__);
+        return RETURN_ERR;
+    } //CID 51 52
     tlv_len += (wrapped_len + 4);
 
     //printf("\n\n");

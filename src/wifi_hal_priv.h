@@ -677,7 +677,7 @@ typedef int    (* platform_update_radio_presence_t)();
 typedef int    (* platform_set_txpower_t)(void* priv, uint txpower);
 typedef int    (* platform_set_offload_mode_t)(void* priv, uint offload_mode);
 typedef int    (* platform_get_ApAclDeviceNum_t)(int vap_index, uint *acl_count);
-typedef int    (* platform_get_chanspec_list_t)(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t channels, char *buff);
+typedef int    (* platform_get_chanspec_list_t)(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, const wifi_channels_list_t *channels, char *buff); //CID 71
 typedef int    (* platform_set_acs_exclusion_list_t)(unsigned int radioIndex, char* str);
 typedef int    (* platform_get_vendor_oui_t)(char* vendor_oui, int vendor_oui_len);
 typedef int    (* platform_set_neighbor_report_t)(uint apIndex, uint add, mac_address_t mac);
@@ -1238,7 +1238,7 @@ extern int platform_free_aid(void* priv, u16* aid);
 extern int platform_sync_done(void* priv);
 extern int platform_update_radio_presence(void);
 extern int platform_set_txpower(void* priv, uint txpower);
-extern int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t channels, char *buff);
+extern int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, const wifi_channels_list_t *channels, char *buff);
 extern int platform_set_acs_exclusion_list(unsigned int radioIndex, char* str);
 extern int platform_get_vendor_oui(char* vendor_oui, int vendor_oui_len);
 extern int platform_set_neighbor_report(uint apIndex, uint add, mac_address_t mac);
