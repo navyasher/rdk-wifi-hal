@@ -370,9 +370,6 @@ void  hash_map_cleanup(hash_map_t *map)
         tmp = e->next;
         he = (hash_element_t *) e->data;
         if(he != NULL) {
-            if (he->data != NULL) {
-                free(he->data);
-            }
             if (he->key != NULL) {
                 free(he->key);
             }
