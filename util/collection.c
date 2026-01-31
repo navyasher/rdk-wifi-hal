@@ -22,6 +22,7 @@
 #include <string.h>
 #include <assert.h>
 #include "collection.h"
+#include "wifi_hal_priv.h"
 
 
 queue_t *queue_create   (void)
@@ -157,18 +158,23 @@ int8_t hash_map_put    (hash_map_t *map, char *key, void *data)
     hash_element_t *e;
     char *dup_key = NULL;
     
+    wifi_hal_dbg_print("%s:%d: NTesting util Adding key='%s' data=%p to hash_map=%p\n", __func__, __LINE__, key ? key : "NULL", data, map);
+    
     if (map == NULL || map->queue == NULL || key == NULL || data == NULL) {
+        wifi_hal_error_print("%s:%d: NTesting util Invalid parameters: map=%p key=%p data=%p\n", __func__, __LINE__, map, key, data);
         return -1;
     }
 
     dup_key = strndup(key, HASH_MAP_MAX_KEY_SIZE);
     if (dup_key == NULL) {
+        wifi_hal_error_print("%s:%d: NTesting util Failed to duplicate key '%s'\n", __func__, __LINE__, key);
         return -1;
     }
 
     map->itr = NULL;
     e = (hash_element_t *)malloc(sizeof(hash_element_t));
     if (e == NULL) {
+        wifi_hal_error_print("%s:%d:NTesting util Failed to allocate hash_element_t\n", __func__, __LINE__);
         free(dup_key);
         return -1;
     }
@@ -177,10 +183,13 @@ int8_t hash_map_put    (hash_map_t *map, char *key, void *data)
     e->data = data;
     
     if (queue_push(map->queue, e) < 0) {
+        wifi_hal_error_print("%s:%d:NTesting util Failed to push to queue\n", __func__, __LINE__);
         free(dup_key);
         free(e);
         return -1;
     }
+    
+    wifi_hal_dbg_print("%s:%d:NTesting util Successfully added key='%s' hash_element=%p to hash_map\n", __func__, __LINE__, key, e);
     return 0;
 }
 
