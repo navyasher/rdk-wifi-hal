@@ -1004,11 +1004,13 @@ bm_sta_list_t *steering_add_stalist(wifi_interface_info_t *interface, char *ssid
         bm_client_info->vap_index = interface->vap_info.vap_index;
         memcpy(bm_client_info->mac_addr, client_mac, sizeof(mac_address_t));
 
+        wifi_hal_dbg_print("%s:%d: NTesting Adding BM STA entry to hash_map for MAC %s\n", __func__, __LINE__, key);
         if (hash_map_put(interface->bm_sta_map, key, bm_client_info) == -1) {
             free(bm_client_info);
-            wifi_hal_error_print("%s:%d: has map failed\n", __func__, __LINE__);
+            wifi_hal_error_print("%s:%d: NTesting has map failed for MAC %s\n", __func__, __LINE__, key);
             return NULL;
         }
+        wifi_hal_dbg_print("%s:%d: NTEsting Successfully added BM STA entry for MAC %s\n", __func__, __LINE__, key);
     }
     if (ssid) {
         strncpy(bm_client_info->ssid, ssid, sizeof(bm_client_info->ssid));
@@ -8677,6 +8679,7 @@ int nl80211_get_scan_results(wifi_interface_info_t *interface)
         {
             hash_map_t *tmp;
             // - cleanup old result data (they are not needed anymore)
+            wifi_hal_dbg_print("%s:%d: NTesting Cleaning up old scan result data for interface %s\n", __func__, __LINE__, interface->name);
             hash_map_cleanup(interface->scan_info_ap_map[1]);
             // - exchange scan data and result data
             tmp = interface->scan_info_ap_map[0];
@@ -11071,13 +11074,15 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
                 return NL_SKIP;
             }
 
+            wifi_hal_dbg_print("%s:%d: NTesting Adding scan info to hash_map for key %s\n", __func__, __LINE__, key);
             if (hash_map_put(interface->scan_info_map, key, scan_info) == -1) {
                 pthread_mutex_unlock(&interface->scan_info_mutex);
                 free(scan_info);
                 free(scan_info_ap);
-                wifi_hal_stats_error_print("%s:%d: [SCAN] map adding error!\n", __func__, __LINE__);
+                wifi_hal_stats_error_print("%s:%d: [SCAN] NTesting Failed to add scan info for key %s\n", __func__, __LINE__, key);
                 return NL_SKIP;
             }
+            wifi_hal_dbg_print("%s:%d: NTesting Successfully added scan info for key %s\n", __func__, __LINE__, key);
         }
         // - copy full info
         *scan_info = *scan_info_ap;
@@ -11088,7 +11093,7 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
     pthread_mutex_lock(&interface->scan_info_ap_mutex);
     if (hash_map_put(interface->scan_info_ap_map[0], key, scan_info_ap) == -1) {
         pthread_mutex_unlock(&interface->scan_info_ap_mutex);
-        wifi_hal_stats_error_print("%s:%d: map adding error!\n", __func__, __LINE__);
+        wifi_hal_stats_error_print("%s:%d: NTesting map adding error!\n", __func__, __LINE__);
         free(scan_info_ap);
         return NL_SKIP;
     }

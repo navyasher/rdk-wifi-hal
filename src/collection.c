@@ -160,7 +160,10 @@ int8_t hash_map_put    (hash_map_t *map, char *key, void *data)
     hash_element_t *e;
     char *dup_key = NULL;
     
+    wifi_hal_dbg_print("%s:%d: NTesting hash_map_put called with key=%s, map=%p, data=%p\n", __func__, __LINE__, key ? key : "(null)", map, data);
+    
     if (map == NULL || map->queue == NULL || key == NULL || data == NULL) {
+        wifi_hal_error_print("%s:%d: NTesting hash_map_put failed - invalid parameters: map=%p, key=%s, data=%p\n", __func__, __LINE__, map, key ? key : "(null)", data);
         return -1;
     }
 
@@ -180,10 +183,12 @@ int8_t hash_map_put    (hash_map_t *map, char *key, void *data)
     e->data = data;
     
     if (queue_push(map->queue, e) < 0) {
+        wifi_hal_error_print("%s:%d: NTesting hash_map_put failed - queue_push failed for key=%s\n", __func__, __LINE__, key);
         free(dup_key);
         free(e);
         return -1;
     }
+    wifi_hal_dbg_print("%s:%d: NTesting hash_map_put completed successfully for key=%s\n", __func__, __LINE__, key);
     return 0;
 }
 
@@ -361,8 +366,12 @@ void  hash_map_cleanup(hash_map_t *map)
 {
     hash_element_t *he;
     element_t    *e, *tmp;
+    int cleanup_count = 0;
+    
+    wifi_hal_dbg_print("%s:%d: hash_map_cleanup called with map=%p\n", __func__, __LINE__, map);
     
     if (map == NULL || map->queue == NULL || map->queue->head == NULL) {
+        wifi_hal_dbg_print("%s:%d: NTesting hash_map_cleanup - nothing to cleanup (map=%p)\n", __func__, __LINE__, map);
         return;
     }
     e = map->queue->head;
@@ -383,6 +392,7 @@ void  hash_map_cleanup(hash_map_t *map)
     }
     map->queue->head = NULL;
     map->queue->count = 0;
+    wifi_hal_dbg_print("%s:%d:NTesting hash_map_cleanup completed - cleaned %d elements\n", __func__, __LINE__, cleanup_count);
     return;
 }
 

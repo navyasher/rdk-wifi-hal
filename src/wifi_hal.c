@@ -2241,11 +2241,13 @@ INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
     memcpy(acl_map->mac_addr_str, key, sizeof(mac_addr_str_t));
     memcpy(acl_map->mac_addr, DeviceMacAddress, sizeof(mac_address_t));
 
+    wifi_hal_dbg_print("%s:%d: NTesting Adding ACL entry to hash_map for MAC %s, ap_index:%d\n", __func__, __LINE__, key, apIndex);
     if (hash_map_put(interface->acl_map, key, acl_map) == -1) {
         free(acl_map);
         wifi_hal_error_print("%s:%d: MAC %s map failure for ap_index:%d\n", __func__, __LINE__, key, apIndex);
         return RETURN_ERR;
     }
+    wifi_hal_dbg_print("%s:%d: NTesting Successfully added ACL entry for MAC %s, ap_index:%d\n", __func__, __LINE__, key, apIndex);
 
     if (nl80211_set_acl(interface) != 0) {
         wifi_hal_error_print("%s:%d: MAC %s nl80211_set_acl failure for ap_index:%d\n", __func__, __LINE__, key, apIndex);
