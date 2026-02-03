@@ -21,7 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
 #include "collection.h"
+#include "wifi_hal_priv.h"
 
 
 queue_t *queue_create   (void)
