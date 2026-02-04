@@ -3330,6 +3330,21 @@ INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_mode, I
         pthread_mutex_unlock(&interface->scan_info_mutex);
         pthread_mutex_lock(&interface->scan_info_ap_mutex);
         cleanup_freqs_filter(interface);
+        
+        // Add a test entry to verify hash_map_cleanup works
+        wifi_bss_info_t *test_entry = (wifi_bss_info_t *)malloc(sizeof(wifi_bss_info_t));
+        if (test_entry) {
+            memset(test_entry, 0, sizeof(wifi_bss_info_t));
+            strcpy(test_entry->bssid, "00:11:22:33:44:55");
+            wifi_hal_dbg_print("%s:%d: NTesting Adding test entry to scan_info_ap_map[0] before cleanup\n", __func__, __LINE__);
+            if (hash_map_put(interface->scan_info_ap_map[0], "test_bssid_cleanup", test_entry) == -1) {
+                free(test_entry);
+                wifi_hal_error_print("%s:%d: NTesting Failed to add test entry\n", __func__, __LINE__);
+            } else {
+                wifi_hal_dbg_print("%s:%d: NTesting Successfully added test entry\n", __func__, __LINE__);
+            }
+        }
+        
         wifi_hal_dbg_print("%s:%d:NTesting Before hash_map_cleanup scan_info_ap_map[0]\n", __func__, __LINE__);
         hash_map_cleanup(interface->scan_info_ap_map[0]);
         wifi_hal_dbg_print("%s:%d: NTesting After hash_map_cleanup scan_info_ap_map[0]\n", __func__, __LINE__);
