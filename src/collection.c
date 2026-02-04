@@ -370,7 +370,7 @@ void  hash_map_cleanup(hash_map_t *map)
     element_t    *e, *tmp;
     int cleanup_count = 0;
     
-    wifi_hal_dbg_print("%s:%d: hash_map_cleanup called with map=%p\n", __func__, __LINE__, map);
+    wifi_hal_dbg_print("%s:%d: NTesting hash_map_cleanup called with map=%p\n", __func__, __LINE__, map);
     
     if (map == NULL || map->queue == NULL || map->queue->head == NULL) {
         wifi_hal_dbg_print("%s:%d: NTesting hash_map_cleanup - nothing to cleanup (map=%p)\n", __func__, __LINE__, map);

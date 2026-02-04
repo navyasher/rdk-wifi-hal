@@ -4489,6 +4489,7 @@ int create_ecomode_interfaces(void)
 {
     uint8_t radioIndex;
 
+     wifi_hal_error_print("%s:%d: NTesting\n", __func__, __LINE__);
     for (radioIndex = 0; radioIndex < get_sizeof_radio_interfaces_map(); radioIndex++)
     {
         int found = 0, j;
@@ -4549,7 +4550,9 @@ int create_ecomode_interfaces(void)
               wifi_hal_dbg_print("%s:%d: phy index: %d\tradio index: %d\tinterface index: %d name: %s  type:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x vap index: %d vap name: %s\n",
                                  __func__, __LINE__,radio->index, vap->radio_index, interface->index, interface->name, interface->type,interface->mac[0], interface->mac[1],
                                  interface->mac[2],interface->mac[3], interface->mac[4], interface->mac[5],vap->vap_index, vap->vap_name);
+              wifi_hal_dbg_print("%s:%d: NTesting Before hash_map_put interface_map, key=%s\n", __func__, __LINE__, interface->name);
               hash_map_put(radio->interface_map, strdup(interface->name), interface);
+              wifi_hal_dbg_print("%s:%d: NTesting After hash_map_put interface_map, key=%s\n", __func__, __LINE__, interface->name);
               radio->capab.maxNumberVAPs++;
 
            }

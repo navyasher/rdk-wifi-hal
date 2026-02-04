@@ -976,6 +976,7 @@ static int wifi_hal_send_disconnect_steering_event(uint32_t group_index, int vap
 
 bm_sta_list_t *steering_add_stalist(wifi_interface_info_t *interface, char *ssid, mac_address_t client_mac, uint8_t type)
 {
+    wifi_hal_dbg_print("%s:%d: NTesting ENTRY steering_add_stalist\n", __func__, __LINE__);
     mac_addr_str_t sta_mac_str;
     char *key = NULL;
     bm_sta_list_t *bm_client_info = NULL;
@@ -1784,6 +1785,7 @@ static rate_limit_entry_t *wifi_hal_rate_limit_entry_get(mac_address_t mac)
     mac_addr_str_t mac_str;
     rate_limit_entry_t *entry;
 
+    wifi_hal_error_print("%s:%d: NTesting entry\n", __func__, __LINE__);
     if (g_wifi_hal.mgt_frame_rate_limit_hashmap == NULL) {
         g_wifi_hal.mgt_frame_rate_limit_hashmap = hash_map_create();
     }
@@ -3624,6 +3626,7 @@ int nl80211_send_and_recv(struct nl_msg *msg,
              int (*valid_finish_handler)(struct nl_msg *, void *),
              void *valid_finish_data)
 {
+    wifi_hal_dbg_print("%s:%d: ENTRY nl80211_send_and_recv\n", __func__, __LINE__);
     char thread_id[24];
     wifi_netlink_thread_info_t *nl_info = NULL;
 
@@ -6135,6 +6138,7 @@ void interface_free(wifi_interface_info_t *interface)
 
 int interface_info_handler(struct nl_msg *msg, void *arg)
 {
+    wifi_hal_error_print("%s:%d: NTesting entry\n", __func__, __LINE__);
     //unsigned int radio_index;
     wifi_radio_info_t *radio = (wifi_radio_info_t *)arg;
     wifi_interface_info_t *interface = NULL;
@@ -6914,6 +6918,7 @@ static int map_rdk_radios_and_indexes(void)
 
 int init_nl80211()
 {
+    wifi_hal_dbg_print("%s:%d: Ntesting ENTRY init_nl80211\n", __func__, __LINE__);
     int ret;
     u32 feat;
     unsigned int i;
@@ -6922,6 +6927,7 @@ int init_nl80211()
     char thread_id[24];
     wifi_netlink_thread_info_t *core_thread_socket = NULL;
 
+    wifi_hal_error_print("%s:%d: NTesting entry\n", __func__, __LINE__);
     core_thread_socket = create_nl80211_socket();
 
     if (!core_thread_socket) {
@@ -8639,6 +8645,7 @@ static int scan_results_handler(struct nl_msg *msg, void *arg)
 
 int nl80211_get_scan_results(wifi_interface_info_t *interface)
 {
+    wifi_hal_dbg_print("%s:%d: Ntesting ENTRY nl80211_get_scan_results interface=%s\n", __func__, __LINE__, interface ? interface->name : "NULL");
     struct nl_msg *msg;
     int ret;
     wifi_finish_data_t scan_results_data = {};
@@ -10829,6 +10836,7 @@ static void parse_ies(unsigned char *ie, int ielen, wifi_bss_info_t *bss)
 
 static int scan_info_handler(struct nl_msg *msg, void *arg)
 {
+    wifi_hal_dbg_print("%s:%d: NTesting ENTRY scan_info_handler\n", __func__, __LINE__);
     wifi_interface_info_t *interface;
     struct nlattr *tb[NL80211_ATTR_MAX + 1];
     struct genlmsghdr *gnlh;
@@ -10855,6 +10863,7 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
 #endif
     };
 
+    wifi_hal_stats_dbg_print("%s:%d:NTesting Entering scan_info_handler\n", __func__, __LINE__);
     mac_address_t   bssid;
     mac_addr_str_t  bssid_str = {0};
     wifi_vap_info_t *vap;
@@ -11091,12 +11100,14 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
 
     // - add AP info into AP map under AP mutex
     pthread_mutex_lock(&interface->scan_info_ap_mutex);
+    wifi_hal_dbg_print("%s:%d: Ntesting Calling hash_map_put for scan_info_ap_map[0], key=%s\n", __func__, __LINE__, key);
     if (hash_map_put(interface->scan_info_ap_map[0], key, scan_info_ap) == -1) {
         pthread_mutex_unlock(&interface->scan_info_ap_mutex);
         wifi_hal_stats_error_print("%s:%d: NTesting map adding error!\n", __func__, __LINE__);
         free(scan_info_ap);
         return NL_SKIP;
     }
+    wifi_hal_dbg_print("%s:%d: NTesting hash_map_put for scan_info_ap_map[0] completed, key=%s\n", __func__, __LINE__, key);
     pthread_mutex_unlock(&interface->scan_info_ap_mutex);
 
     // wifi_hal_dbg_print("%s:%d: [SCAN] bssid:%s, ssid:%s\n", __func__, __LINE__, bssid_str, l_ssid);

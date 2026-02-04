@@ -2198,6 +2198,7 @@ INT wifi_hal_getScanResults(wifi_radio_index_t index, wifi_channel_t *channel, w
 #ifdef WIFI_HAL_VERSION_3_PHASE2
 INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
 {
+    wifi_hal_dbg_print("%s:%d: NTesting ENTRY wifi_hal_addApAclDevice (phase2) apIndex=%d\n", __func__, __LINE__, apIndex);
     wifi_interface_info_t *interface = NULL;
     wifi_vap_info_t *vap;
     acl_map_t *acl_map = NULL;
@@ -2266,6 +2267,7 @@ INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
 #else
 INT wifi_hal_addApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
 {
+    wifi_hal_dbg_print("%s:%d: NTesting ENTRY wifi_hal_addApAclDevice (char) apIndex=%d\n", __func__, __LINE__, apIndex);
     wifi_interface_info_t *interface = NULL;
     wifi_vap_info_t *vap;
     acl_map_t *acl_map = NULL;
@@ -2311,6 +2313,7 @@ INT wifi_hal_addApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
         wifi_hal_error_print("%s:%d: MAC %s map failure for ap_index:%d\n", __func__, __LINE__, DeviceMacAddress, apIndex);
         return RETURN_ERR;
     }
+    wifi_hal_dbg_print("%s:%d: NTesting After hash_map_put acl_map, key=%s\n", __func__, __LINE__, DeviceMacAddress);
 
     if (nl80211_set_acl(interface) != 0) {
         wifi_hal_error_print("%s:%d: MAC %s nl80211_set_acl failure for ap_index:%d\n", __func__, __LINE__, DeviceMacAddress, apIndex);
@@ -2377,6 +2380,7 @@ INT wifi_hal_delApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
         memcpy(acl_map->mac_addr_str, key, sizeof(mac_addr_str_t));
         memcpy(acl_map->mac_addr, DeviceMacAddress, sizeof(mac_addr_str_t));
 
+        wifi_hal_dbg_print("%s:%d: Before hash_map_put acl_map (error recovery), key=%s\n", __func__, __LINE__, key);
         if (hash_map_put(interface->acl_map, key, acl_map) == -1) {
             free(acl_map);
         }
@@ -2430,6 +2434,7 @@ INT wifi_hal_delApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
         memcpy(acl_map->mac_addr_str, DeviceMacAddress, sizeof(mac_addr_str_t));
         to_mac_bytes(acl_map->mac_addr_str, acl_map->mac_addr);
 
+        wifi_hal_dbg_print("%s:%d: Ntesting Before hash_map_put acl_map (error recovery), key=%s\n", __func__, __LINE__, DeviceMacAddress);
         if (hash_map_put(interface->acl_map, DeviceMacAddress, acl_map) == -1) {
             free(acl_map);
         }
@@ -2582,6 +2587,7 @@ INT wifi_hal_sendDataFrame( int vap_id, unsigned char *dmac, unsigned char *data
 
 INT wifi_hal_startScan(wifi_radio_index_t index, wifi_neighborScanMode_t scan_mode, INT dwell_time, UINT num, UINT *chan_list)
 {
+    wifi_hal_dbg_print("%s:%d: NTesting ENTRY wifi_hal_startScan index=%d\n", __func__, __LINE__, index);
     wifi_radio_info_t *radio;
     wifi_interface_info_t *interface;
     wifi_vap_info_t *vap;
@@ -2689,7 +2695,9 @@ INT wifi_hal_startScan(wifi_radio_index_t index, wifi_neighborScanMode_t scan_mo
     wifi_hal_stats_info_print("%s:%d: Scan Frequencies:%s \n", __func__, __LINE__, chan_list_str);
 
     pthread_mutex_lock(&interface->scan_info_mutex);
+    wifi_hal_dbg_print("%s:%d: Ntesting Before hash_map_cleanup scan_info_map\n", __func__, __LINE__);
     hash_map_cleanup(interface->scan_info_map);
+    wifi_hal_dbg_print("%s:%d:NTesting After hash_map_cleanup scan_info_map\n", __func__, __LINE__);
     pthread_mutex_unlock(&interface->scan_info_mutex);
 
     return (nl80211_start_scan(interface, NL80211_SCAN_FLAG_COLOCATED_6GHZ, freq_num, freq_list, dwell_time, 1, ssid_list) == 0) ? RETURN_OK:RETURN_ERR;
@@ -3216,6 +3224,7 @@ exit:
 INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_mode, INT dwell_time,
     UINT chan_num, UINT *chan_list)
 {
+    wifi_hal_dbg_print("%s:%d: NTesting ENTRY wifi_hal_startNeighborScan apIndex=%d\n", __func__, __LINE__, apIndex);
     wifi_radio_info_t *radio;
     wifi_interface_info_t *interface;
     uint freq, op_class;
@@ -3315,11 +3324,15 @@ INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_mode, I
          *  (scan_info_ap_map[1]) stays unchanged.
          */
         pthread_mutex_lock(&interface->scan_info_mutex);
+        wifi_hal_dbg_print("%s:%d: NTesting Before hash_map_cleanup scan_info_map\n", __func__, __LINE__);
         hash_map_cleanup(interface->scan_info_map);
+        wifi_hal_dbg_print("%s:%d: NTestingAfter hash_map_cleanup scan_info_map\n", __func__, __LINE__);
         pthread_mutex_unlock(&interface->scan_info_mutex);
         pthread_mutex_lock(&interface->scan_info_ap_mutex);
         cleanup_freqs_filter(interface);
+        wifi_hal_dbg_print("%s:%d:NTesting Before hash_map_cleanup scan_info_ap_map[0]\n", __func__, __LINE__);
         hash_map_cleanup(interface->scan_info_ap_map[0]);
+        wifi_hal_dbg_print("%s:%d: NTesting After hash_map_cleanup scan_info_ap_map[0]\n", __func__, __LINE__);
         pthread_mutex_unlock(&interface->scan_info_ap_mutex);
     }
     pthread_mutex_unlock(&interface->scan_state_mutex);
