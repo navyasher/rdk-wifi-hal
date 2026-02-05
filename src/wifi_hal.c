@@ -3335,7 +3335,13 @@ INT wifi_hal_startNeighborScan(INT apIndex, wifi_neighborScanMode_t scan_mode, I
         wifi_bss_info_t *test_entry = (wifi_bss_info_t *)malloc(sizeof(wifi_bss_info_t));
         if (test_entry) {
             memset(test_entry, 0, sizeof(wifi_bss_info_t));
-            strcpy(test_entry->bssid, "00:11:22:33:44:55");
+            // Set binary MAC address (6 bytes) instead of string
+            test_entry->bssid[0] = 0x00;
+            test_entry->bssid[1] = 0x11;
+            test_entry->bssid[2] = 0x22;
+            test_entry->bssid[3] = 0x33;
+            test_entry->bssid[4] = 0x44;
+            test_entry->bssid[5] = 0x55;
             wifi_hal_dbg_print("%s:%d: NTesting Adding test entry to scan_info_ap_map[0] before cleanup\n", __func__, __LINE__);
             if (hash_map_put(interface->scan_info_ap_map[0], "test_bssid_cleanup", test_entry) == -1) {
                 free(test_entry);
