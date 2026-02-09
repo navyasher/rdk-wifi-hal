@@ -391,6 +391,7 @@ void  hash_map_cleanup(hash_map_t *map)
         }
         free(e);
         e = tmp;
+        cleanup_count++;  
     }
     map->queue->head = NULL;
     map->queue->count = 0;
