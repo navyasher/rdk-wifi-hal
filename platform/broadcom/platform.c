@@ -242,15 +242,18 @@ unsigned int convert_radioindex_to_bcmband(unsigned int radioIndex)
 
 void convert_from_channellist_to_chspeclist(unsigned int bw, unsigned int band,wifi_channels_list_t chanlist, char* output_chanlist)
 {
+    wifi_hal_dbg_print("%s:%d ENTRY - bw=0x%x, band=0x%x, num_channels=%u\n", __func__, __LINE__, bw, band, chanlist.num_channels);
     int channel_list[chanlist.num_channels];
     memcpy(channel_list,chanlist.channels_list,sizeof(channel_list));
     for(int i=0;i<chanlist.num_channels;i++)
     {
         char buff[8];
         chanspec_t chspec = wf_channel2chspec(channel_list[i],bw,band);
+        wifi_hal_dbg_print("%s:%d channel[%d]=%d -> chspec=0x%x\n", __func__, __LINE__, i, channel_list[i], chspec);
         snprintf(buff,sizeof(buff),"0x%x,",chspec);
         strcat(output_chanlist, buff);
     }
+    wifi_hal_dbg_print("%s:%d Final output_chanlist=%s\n", __func__, __LINE__, output_chanlist ? output_chanlist : "NULL");
 }
 #endif
 
@@ -965,17 +968,24 @@ static int disable_dfs_auto_channel_change(int radio_index, int disable)
 
 int platform_get_chanspec_list(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t chanlist, char* buff)
 {
+    wifi_hal_dbg_print("%s:%d ENTRY - radioIndex=%u, bandwidth=0x%x, num_channels=%u\n", __func__, __LINE__, radioIndex, bandwidth, chanlist.num_channels);
 #if defined(TCXB8_PORT) || defined(XB10_PORT) || defined(SCXER10_PORT) || defined(SCXF10_PORT)
     unsigned int bw = convert_channelBandwidth_to_bcmwifibandwidth(bandwidth);
     unsigned int band = convert_radioindex_to_bcmband(radioIndex);
+    wifi_hal_dbg_print("%s:%d Converted bw=0x%x, band=0x%x\n", __func__, __LINE__, bw, band);
     if(bw != UINT_MAX && band != UINT_MAX)
     {
+        wifi_hal_dbg_print("%s:%d Calling convert_from_channellist_to_chspeclist\n", __func__, __LINE__);
         convert_from_channellist_to_chspeclist(bw,band,chanlist,buff);
+        wifi_hal_dbg_print("%s:%d convert_from_channellist_to_chspeclist completed, buff=%s\n", __func__, __LINE__, buff ? buff : "NULL");
     }
     else
     {
+        wifi_hal_error_print("%s:%d Invalid bw or band conversion\n", __func__, __LINE__);
         return RETURN_ERR;
     }
+#else
+    wifi_hal_dbg_print("%s:%d Platform not supported for chanspec conversion\n", __func__, __LINE__);
 #endif
     return RETURN_OK;
 }

@@ -1829,6 +1829,8 @@ static bool is_wifi_hal_rate_limit_block(unsigned short stype, mac_address_t mac
     rate_limit_entry_t *entry;
     wifi_hal_mgt_frame_rate_limit_t *rl = &g_wifi_hal.mgt_frame_rate_limit;
 
+    wifi_hal_info_print("%s:%d: NTesting entry\n", __func__, __LINE__);
+
     if (!rl->enabled || rl->rate_limit <= 0 || rl->window_size <= 0 || rl->cooldown_time <= 0) {
         return false;
     }
@@ -17514,12 +17516,16 @@ int wifi_drv_set_acs_exclusion_list(unsigned int radioIndex, char* str)
 
 int wifi_drv_get_chspc_configs(unsigned int radioIndex, wifi_channelBandwidth_t bandwidth, wifi_channels_list_t chanlist, char* buff)
 {
-    wifi_hal_dbg_print("%s:%d Enter\n",__func__,__LINE__);
+    wifi_hal_dbg_print("%s:%d ENTRY - radioIndex=%u, bandwidth=0x%x, num_channels=%u\n", __func__, __LINE__, radioIndex, bandwidth, chanlist.num_channels);
     platform_get_chanspec_list_t platform_get_chanspec_list_fn = get_platform_chanspec_list_fn();
     if(platform_get_chanspec_list_fn != NULL)
     {
-        return platform_get_chanspec_list_fn(radioIndex,bandwidth,chanlist,buff);
+        wifi_hal_dbg_print("%s:%d Calling platform_get_chanspec_list_fn\n", __func__, __LINE__);
+        int result = platform_get_chanspec_list_fn(radioIndex,bandwidth,chanlist,buff);
+        wifi_hal_dbg_print("%s:%d platform_get_chanspec_list_fn returned %d, buff=%s\n", __func__, __LINE__, result, buff ? buff : "NULL");
+        return result;
     } else {
+        wifi_hal_error_print("%s:%d platform_get_chanspec_list_fn is NULL\n", __func__, __LINE__);
         return 0;
     }
 }
