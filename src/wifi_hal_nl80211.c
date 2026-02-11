@@ -1832,10 +1832,12 @@ static bool is_wifi_hal_rate_limit_block(unsigned short stype, mac_address_t mac
     wifi_hal_error_print("%s:%d: NTesting entry\n", __func__, __LINE__);
 
     if (!rl->enabled || rl->rate_limit <= 0 || rl->window_size <= 0 || rl->cooldown_time <= 0) {
+        wifi_hal_dbg_print("%s:%d: EXIT - rate limiting disabled or invalid params (enabled=%d, rate_limit=%d, window_size=%d, cooldown_time=%d) - returning false\n", __func__, __LINE__, rl->enabled, rl->rate_limit, rl->window_size, rl->cooldown_time);
         return false;
     }
 
     if (stype != WLAN_FC_STYPE_AUTH && stype != WLAN_FC_STYPE_DEAUTH) {
+        wifi_hal_dbg_print("%s:%d: EXIT - frame type %d not subject to rate limiting (not AUTH/DEAUTH) - returning false\n", __func__, __LINE__, stype);
         return false;
     }
 
@@ -1843,21 +1845,25 @@ static bool is_wifi_hal_rate_limit_block(unsigned short stype, mac_address_t mac
 
     entry = wifi_hal_rate_limit_entry_get(mac);
     if (entry == NULL) {
+        wifi_hal_dbg_print("%s:%d: EXIT - failed to get/create rate limit entry for MAC %s - returning false\n", __func__, __LINE__, to_mac_str(mac, mac_str));
         return false;
     }
 
     time_now = get_boot_time_in_sec();
     if (time_now < entry->blocked_until) {
+        wifi_hal_dbg_print("%s:%d: EXIT - MAC %s still in cooldown period (blocked until %ld, now %ld) - returning true\n", __func__, __LINE__, to_mac_str(mac, mac_str), entry->blocked_until, time_now);
         return true;
     }
 
     if (difftime(time_now, entry->window_start) >= rl->window_size) {
         entry->packet_count = 0;
         entry->window_start = time_now;
+        wifi_hal_dbg_print("%s:%d: Reset packet count for MAC %s (new window)\n", __func__, __LINE__, to_mac_str(mac, mac_str));
     }
 
     if (entry->packet_count < rl->rate_limit) {
         entry->packet_count++;
+        wifi_hal_dbg_print("%s:%d: EXIT - MAC %s packet count %d within limit %d - returning false\n", __func__, __LINE__, to_mac_str(mac, mac_str), entry->packet_count, rl->rate_limit);
         return false;
     }
 
@@ -1868,6 +1874,7 @@ static bool is_wifi_hal_rate_limit_block(unsigned short stype, mac_address_t mac
 
     entry->blocked_until = time_now + rl->cooldown_time;
 
+    wifi_hal_dbg_print("%s:%d: EXIT - MAC %s rate limit exceeded (%d >= %d), blocking until %ld - returning true\n", __func__, __LINE__, to_mac_str(mac, mac_str), entry->packet_count, rl->rate_limit, entry->blocked_until);
     return true;
 }
 
