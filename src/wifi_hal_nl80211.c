@@ -1829,7 +1829,7 @@ static bool is_wifi_hal_rate_limit_block(unsigned short stype, mac_address_t mac
     rate_limit_entry_t *entry;
     wifi_hal_mgt_frame_rate_limit_t *rl = &g_wifi_hal.mgt_frame_rate_limit;
 
-    wifi_hal_info_print("%s:%d: NTesting entry\n", __func__, __LINE__);
+    wifi_hal_error_print("%s:%d: NTesting entry\n", __func__, __LINE__);
 
     if (!rl->enabled || rl->rate_limit <= 0 || rl->window_size <= 0 || rl->cooldown_time <= 0) {
         return false;
@@ -1915,6 +1915,7 @@ int process_frame_mgmt(wifi_interface_info_t *interface, struct ieee80211_mgmt *
     uint8_t switch_mode, new_channel, switch_count;
 #endif
 
+    wifi_hal_error_print("%s:%d: NTesting entry\n", __func__, __LINE__);
     u16 reasoncode;
     if (mgmt == NULL) {
         return -1;
@@ -1959,7 +1960,7 @@ int process_frame_mgmt(wifi_interface_info_t *interface, struct ieee80211_mgmt *
         return -1;
     }
 
-
+    wifi_hal_error_print("%s:%d: NTesting entry 1\n", __func__, __LINE__);
     fc = le_to_host16(mgmt->frame_control);
     stype = WLAN_FC_GET_STYPE(fc);
 
@@ -1967,6 +1968,7 @@ int process_frame_mgmt(wifi_interface_info_t *interface, struct ieee80211_mgmt *
         return 0;
     }
 
+    wifi_hal_error_print("%s:%d: NTesting entry 2\n", __func__, __LINE__);
     switch(stype) {
     case WLAN_FC_STYPE_AUTH:
         mgmt_type = WIFI_MGMT_FRAME_TYPE_AUTH;
@@ -2074,7 +2076,7 @@ int process_frame_mgmt(wifi_interface_info_t *interface, struct ieee80211_mgmt *
     case WLAN_FC_STYPE_ACTION:
         mgmt_type = WIFI_MGMT_FRAME_TYPE_ACTION;
         cat = mgmt->u.action.category;
-
+        wifi_hal_error_print("%s:%d: NTesting entry 3\n", __func__, __LINE__);
         wifi_hal_dbg_print("%s:%d: interface:%s received action frame from:%s to:%s, category:%d\n",
             __func__, __LINE__, interface->name, to_mac_str(mgmt->sa, sta_mac_str),
             to_mac_str(mgmt->da, frame_da_str), cat);
