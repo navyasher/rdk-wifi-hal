@@ -22,6 +22,7 @@ AM_CFLAGS += -D_ANSC_USER
 AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
 AM_CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter -Wno-pointer-sign -Wno-sign-compare -Wno-type-limits -Wno-format-truncation
 AM_CPPFLAGS = -Wall -Werror
+AM_LDFLAGS = -Wl,-Bsymbolic
 AUTOMAKE_OPTIONS = subdir-objects
 SUBDIRS = .
 if WITH_GTEST_SUPPORT

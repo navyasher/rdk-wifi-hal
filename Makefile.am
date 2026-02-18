@@ -17,6 +17,3 @@
 # limitations under the License.
 ##########################################################################
 SUBDIRS = platform src util feature_dpp
-
-AM_LDFLAGS = -Wl,-Bsymbolic
-
