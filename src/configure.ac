@@ -82,6 +82,9 @@ AC_C_INLINE
 # Checks for library functions.
 AC_FUNC_MALLOC
 
+# Add -Bsymbolic flag for shared libraries
+LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
+
 AC_CONFIG_FILES(Makefile)
 
 AC_SUBST(GTEST_ENABLE_FLAG)
