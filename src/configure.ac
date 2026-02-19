@@ -83,7 +83,7 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 
 # Add -Bsymbolic flag for shared libraries
-LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
+#LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
 
 AC_CONFIG_FILES(Makefile)
 
