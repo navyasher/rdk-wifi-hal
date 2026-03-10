@@ -4575,7 +4575,11 @@ int create_ecomode_interfaces(void)
               wifi_hal_dbg_print("%s:%d: phy index: %d\tradio index: %d\tinterface index: %d name: %s  type:%d, mac:%02x:%02x:%02x:%02x:%02x:%02x vap index: %d vap name: %s\n",
                                  __func__, __LINE__,radio->index, vap->radio_index, interface->index, interface->name, interface->type,interface->mac[0], interface->mac[1],
                                  interface->mac[2],interface->mac[3], interface->mac[4], interface->mac[5],vap->vap_index, vap->vap_name);
-              hash_map_put(radio->interface_map, strdup(interface->name), interface);
+              
+              if (hash_map_put(radio->interface_map, strdup(interface->name), interface) == -1) {
+                  wifi_hal_info_print("%s:%d: hash_map_put failed for interface %s\n", __func__, __LINE__, interface->name);
+                  continue;
+              }
               radio->capab.maxNumberVAPs++;
 
            }
