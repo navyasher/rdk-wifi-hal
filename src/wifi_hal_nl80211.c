@@ -1007,6 +1007,7 @@ bm_sta_list_t *steering_add_stalist(wifi_interface_info_t *interface, char *ssid
         memcpy(bm_client_info->mac_addr, client_mac, sizeof(mac_address_t));
 
         if (hash_map_put(interface->bm_sta_map, strdup(key), bm_client_info) == -1) {
+            free(bm_client_info);
             wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
             return NULL;
         }
@@ -1812,6 +1813,7 @@ static rate_limit_entry_t *wifi_hal_rate_limit_entry_get(mac_address_t mac)
     entry->last_activity = time_now;
     
     if (hash_map_put(g_wifi_hal.mgt_frame_rate_limit_hashmap, strdup(mac_str), entry) == -1) {
+        free(entry);
         wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
         return NULL;
     }
@@ -3645,8 +3647,11 @@ int nl80211_send_and_recv(struct nl_msg *msg,
     if (!nl_info) {
         if ((nl_info = create_nl80211_socket())) {
             if (hash_map_put(g_wifi_hal.netlink_socket_map, strdup(thread_id), nl_info) == -1) {
-                wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
+                nl_destroy_handles(&nl_info->nl);
+                nl_cb_put(nl_info->nl_cb);
+                free(nl_info);
                 pthread_mutex_unlock(&g_wifi_hal.nl_create_socket_lock);
+                wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
                 return -1;
             }
         }
@@ -6284,6 +6289,7 @@ int interface_info_handler(struct nl_msg *msg, void *arg)
             }
 
             if (hash_map_put(radio->interface_map, strdup(interface->name), interface) == -1) {
+                interface_free(interface);
                 wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
                 return NL_SKIP;
             }
@@ -6945,6 +6951,9 @@ int init_nl80211()
     snprintf(thread_id, sizeof(thread_id), "%lu", pthread_self());
     
     if (hash_map_put(g_wifi_hal.netlink_socket_map, strdup(thread_id), core_thread_socket) == -1) {
+        nl_destroy_handles(&g_wifi_hal.nl);
+        nl_cb_put(g_wifi_hal.nl_cb);
+        free(core_thread_socket);
         wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
         return -1;
     }
@@ -6955,6 +6964,7 @@ int init_nl80211()
     g_wifi_hal.nl80211_id = genl_ctrl_resolve((struct nl_sock *)g_wifi_hal.nl, "nl80211");
     if (g_wifi_hal.nl80211_id < 0) {
         wifi_hal_error_print("%s:%d: generic netlink not found\n", __func__, __LINE__);
+        nl_destroy_handles(&g_wifi_hal.nl);
         nl_cb_put(g_wifi_hal.nl_cb);
         return -1;
     }
@@ -6962,6 +6972,7 @@ int init_nl80211()
     g_wifi_hal.nl_event = nl_create_handle(g_wifi_hal.nl_cb, "event");
     if (g_wifi_hal.nl_event == NULL) {
         nl_cb_put(g_wifi_hal.nl_cb);
+        nl_destroy_handles(&g_wifi_hal.nl);
         return -1;
     }
 
@@ -11092,6 +11103,7 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
 
             if (hash_map_put(interface->scan_info_map, strdup(key), scan_info) == -1) {
                 pthread_mutex_unlock(&interface->scan_info_mutex);
+                free(scan_info);
                 free(scan_info_ap);
                 wifi_hal_stats_error_print("%s:%d: [SCAN] map adding error!\n", __func__, __LINE__);
                 return NL_SKIP;
@@ -11106,6 +11118,7 @@ static int scan_info_handler(struct nl_msg *msg, void *arg)
     pthread_mutex_lock(&interface->scan_info_ap_mutex);
     if (hash_map_put(interface->scan_info_ap_map[0], strdup(key), scan_info_ap) == -1) {
         pthread_mutex_unlock(&interface->scan_info_ap_mutex);
+        free(scan_info_ap);
         wifi_hal_stats_error_print("%s:%d: map adding error!\n", __func__, __LINE__);
         return NL_SKIP;
     }

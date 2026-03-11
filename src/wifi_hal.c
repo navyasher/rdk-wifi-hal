@@ -2260,6 +2260,7 @@ INT wifi_hal_addApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
     memcpy(acl_map->mac_addr, DeviceMacAddress, sizeof(mac_address_t));
 
     if (hash_map_put(interface->acl_map, strdup(key), acl_map) == -1) {
+        free(acl_map);
         wifi_hal_error_print("%s:%d: MAC %s hash_map_put failed for ap_index:%d\n", __func__, __LINE__, key, apIndex);
         return RETURN_ERR;
     }
@@ -2322,6 +2323,7 @@ INT wifi_hal_addApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
     to_mac_bytes(acl_map->mac_addr_str, acl_map->mac_addr);
 
     if (hash_map_put(interface->acl_map, strdup(DeviceMacAddress), acl_map) == -1) {
+        free(acl_map);
         wifi_hal_error_print("%s:%d: MAC %s hash_map_put failed for ap_index:%d\n", __func__, __LINE__, DeviceMacAddress, apIndex);
         return RETURN_ERR;
     }
@@ -2392,6 +2394,7 @@ INT wifi_hal_delApAclDevice(INT apIndex, mac_address_t DeviceMacAddress)
         memcpy(acl_map->mac_addr, DeviceMacAddress, sizeof(mac_addr_str_t));
 
         if (hash_map_put(interface->acl_map, strdup(key), acl_map) == -1) {
+            free(acl_map);
             wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
         }
         return -1;
@@ -2444,6 +2447,7 @@ INT wifi_hal_delApAclDevice(INT apIndex, CHAR *DeviceMacAddress)
         to_mac_bytes(acl_map->mac_addr_str, acl_map->mac_addr);
 
         if (hash_map_put(interface->acl_map, strdup(DeviceMacAddress), acl_map) == -1) {
+            free(acl_map);
             wifi_hal_error_print("%s:%d: hash_map_put failed\n", __func__, __LINE__);
         }
 

@@ -4578,6 +4578,7 @@ int create_ecomode_interfaces(void)
               
               if (hash_map_put(radio->interface_map, strdup(interface->name), interface) == -1) {
                   wifi_hal_info_print("%s:%d: hash_map_put failed for interface %s\n", __func__, __LINE__, interface->name);
+                  free(interface);
                   continue;
               }
               radio->capab.maxNumberVAPs++;
